@@ -131,6 +131,19 @@ Object do(
 #
 # Declare interfaces
 #
+#
+# iNone:  always return an object which doesn't accept any call (return iError)
+# iAny:   always return an object accepting any call (calls returns iNone)
+# iNever: never returning interface, normal programming flow
+# iError: never returning interface because of a programming error
+#
+# iExact(o):    interface for the object o (identity check)
+# iMaybe(i):    may return at most once with i
+# iMultiple(i): may never return or return multiple times with i
+# iSymbol():    non evaluated code
+# iParam():     new parametric interface
+# iCode(i):     code evaluated in context of i
+#
 
 iNone  := Interface clone setInterfaceName("iNone")
 iAny   := Interface clone setInterfaceName("iAny")   setAllowAnyCall(iNone)
@@ -153,5 +166,29 @@ iCanBeDebugged := Interface clone define("iCanBeDebugged",
 
 Object implements(iCanBeDebugged)
 String implements(iString)
+
+# Checks are done by evaluating all slots of all managed objects. Interface are
+# matched with each other and compatibility is checked. Parametric interfaces
+# are bound to producer and consumer interfaces. The graph of parametric
+# interfaces is then reduced until all producers and consumers are non
+# parametric. Then compatibility is checked between producers and consumers.
+
+# Flow control with return is checked using parametric interfaces. return is a
+# continuation having a parametric type.
+
+# call-with-current-continuation is implemented as:
+#
+# A := iParam
+# CodeInterface := Interface clone do(
+#   parent(iObject)
+#   slot("continuation", iNever, A)
+# )
+# slot("call-cc", iMultiple(A), iCode(CodeInterface))
+#
+# call-cc takes a code block and returns a parameter A. The code block takes
+# code evaluated in an object having the "continuation" slot. This slot takes
+# a parameter A identical to the one returned by call-cc and never returns.
+# 
+#
 
 
